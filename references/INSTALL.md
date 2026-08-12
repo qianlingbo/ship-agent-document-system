@@ -1,45 +1,57 @@
-# Runtime and installation
+# Installation and authorization
 
-## Requirements
+Run `python3 "{baseDir}/scripts/check_runtime.py"` before changing the environment.
 
-- Python 3.10+
-- Python packages: `openpyxl`, `Pillow`, `numpy`
-- Commands on `PATH`: `pdftoppm`, `magick`, `tesseract`
-- Tesseract English language data
+## Python
 
-Install Python packages in an isolated environment:
+Python 3.10 or newer is required. Install the deterministic runtime packages with:
 
 ```bash
-python3 -m venv .venv
-. .venv/bin/activate
-python3 -m pip install openpyxl Pillow numpy
+python3 -m pip install -r "{baseDir}/scripts/requirements.txt"
 ```
 
-macOS system packages:
+## System tools
+
+Required for PDF OCR and passport-image processing:
+
+- Poppler (`pdftoppm`)
+- Tesseract OCR with English; Chinese improves certificate OCR
+- ImageMagick (`magick`)
+
+Recommended for RAR and other archives: `7zz`, `7z`, or `unar`.
+
+On macOS with Homebrew:
 
 ```bash
-brew install poppler imagemagick tesseract
+brew install poppler tesseract tesseract-lang imagemagick sevenzip
 ```
 
-Debian/Ubuntu system packages:
+## Agent Mail CLI
+
+Install the official CLI:
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y poppler-utils imagemagick tesseract-ocr tesseract-ocr-eng
+npm install -g @tencent-qqmail/agently-cli
 ```
+
+Authorize interactively:
+
+```bash
+agently-cli auth login
+```
+
+Confirm the connected account:
+
+```bash
+agently-cli +me
+```
+
+Authorization determines the active mailbox, so the Skill is not tied to one address. Re-run `agently-cli auth login` to switch accounts. Never place OAuth tokens or mailbox data inside this Skill.
 
 ## Skill locations
 
-This directory follows the AgentSkills `SKILL.md` convention.
+Copy the entire `ship-agent-document-system` directory to one of these locations, then start a new agent session if its Skill list is cached:
 
-- OpenClaw workspace: `<workspace>/skills/ship-crew-info-export/`
-- OpenClaw shared: `~/.openclaw/skills/ship-crew-info-export/`
-- OpenClaw local install: `openclaw skills install /path/ship-crew-info-export`
-- Hermes personal: `~/.hermes/skills/ship-crew-info-export/`
-- Codex personal: `~/.codex/skills/ship-crew-info-export/`
-
-After installation, start a new agent session if the skill list is cached.
-
-## Low-cost model guidance
-
-Give the model only the four input paths and desired output path. The script performs image rotation, OCR-guided MRZ location, biometric-region cropping, compression, workbook insertion, and validation. The model should not inspect all passport pages unless the command fails.
+- Hermes: `~/.hermes/skills/ship-agent-document-system/`
+- OpenClaw workspace: `<workspace>/skills/ship-agent-document-system/`
+- Codex: `~/.codex/skills/ship-agent-document-system/`

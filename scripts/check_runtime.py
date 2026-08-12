@@ -7,22 +7,29 @@ import shutil
 import sys
 
 
-def main() -> None:
+def main() -> int:
+    packages = {
+        name: importlib.util.find_spec(module) is not None
+        for name, module in {
+            "openpyxl": "openpyxl", "Pillow": "PIL", "numpy": "numpy",
+            "pypdf": "pypdf", "pdfplumber": "pdfplumber", "python-docx": "docx",
+        }.items()
+    }
+    required_commands = {name: shutil.which(name) for name in ("pdftoppm", "tesseract", "magick")}
     result = {
         "python": sys.version.split()[0],
         "python_ok": sys.version_info >= (3, 10),
-        "python_packages": {
-            name: importlib.util.find_spec(module) is not None
-            for name, module in {"openpyxl": "openpyxl", "Pillow": "PIL", "numpy": "numpy"}.items()
-        },
-        "commands": {name: shutil.which(name) for name in ("pdftoppm", "magick", "tesseract")},
+        "python_packages": packages,
+        "required_commands": required_commands,
+        "agent_mail_cli": shutil.which("agently-cli"),
+        "archive_commands": {name: shutil.which(name) for name in ("7zz", "7z", "unar")},
     }
-    result["status"] = "ready" if (
-        result["python_ok"] and all(result["python_packages"].values()) and all(result["commands"].values())
-    ) else "missing_dependencies"
-    print(json.dumps(result, indent=2))
-    raise SystemExit(0 if result["status"] == "ready" else 1)
+    core_ready = result["python_ok"] and all(packages.values()) and all(required_commands.values())
+    result["status"] = "ready" if core_ready else "missing_dependencies"
+    result["mail_ready"] = bool(result["agent_mail_cli"])
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0 if core_ready else 1
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

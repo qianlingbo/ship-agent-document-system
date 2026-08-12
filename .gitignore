@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.env
+data/
+output/
+原始文件/
+护照姓名人工核对.json
