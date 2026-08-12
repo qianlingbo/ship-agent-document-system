@@ -1,0 +1,4 @@
+interface:
+  display_name: "船员信息表自动录入"
+  short_description: "自动裁切护照资料页并生成船员信息 Excel 工作簿"
+  default_prompt: "Use $ship-crew-info-export to fill the crew information workbook from crew data, face photos, and passport PDFs."
