@@ -1,0 +1,4 @@
+interface:
+  display_name: "Port of Call 挂靠港转换"
+  short_description: "转换挂靠港与前十港为海事单一窗口数据"
+  default_prompt: "Use $ship-port-of-call to convert this port history into standardized MSA rows."

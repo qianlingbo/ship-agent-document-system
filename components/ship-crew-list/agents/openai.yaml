@@ -1,0 +1,4 @@
+interface:
+  display_name: "Crew List 船员名单转换"
+  short_description: "转换 IMO Crew List 为海事单一窗口船员数据"
+  default_prompt: "Use $ship-crew-list to convert this IMO Crew List into standardized crew rows."

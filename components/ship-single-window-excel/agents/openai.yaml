@@ -1,0 +1,4 @@
+interface:
+  display_name: "海事单一窗口 Excel"
+  short_description: "组装船员、挂靠港及证书数据的导入工作簿"
+  default_prompt: "Use $ship-single-window-excel to assemble the MSA import workbook from component JSON outputs."

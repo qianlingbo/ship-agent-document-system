@@ -1,11 +1,15 @@
 ---
 name: ship-agent-document-system
-description: End-to-end ship agency document operations from Agent Mail or local files. Use when receiving vessel pre-arrival emails, recursively extracting archives, grouping files by vessel, building taskbooks, merging maritime/competency/dangerous-goods PDFs, converting IMO Crew List and Port of Call into China MSA single-window Excel, extracting certificate dates, verifying crew names against passport MRZ order, or producing the crew information workbook with cropped 20–200 KB face and passport images.
+description: Run the complete end-to-end ship agency document workflow from vessel email or local files through audited folders, maritime PDFs, taskbook, China MSA single-window Excel, MRZ verification, and crew photo workbook. Use only when multiple stages or the whole vessel workflow are requested; use a component Skill for one isolated operation.
 ---
 
 # Ship Agent Document System
 
 Use the deterministic scripts for extraction, conversion, PDF merging, Excel editing, and image processing. A smaller model should orchestrate these scripts, inspect `处理清单.json`, and ask for human review only where the manifest reports uncertainty.
+
+## Route narrow requests
+
+This is the total-workflow Skill. When the user asks for only one operation, use the corresponding component Skill instead of running the complete pipeline. Read [references/COMPONENTS.md](references/COMPONENTS.md) for the routing table.
 
 ## Safety boundary
 

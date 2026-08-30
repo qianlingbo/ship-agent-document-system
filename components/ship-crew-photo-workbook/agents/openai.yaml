@@ -1,0 +1,4 @@
+interface:
+  display_name: "船员照片信息表"
+  short_description: "裁切护照资料页并生成船员照片信息 Excel"
+  default_prompt: "Use $ship-crew-photo-workbook to generate the validated crew photo information workbook."

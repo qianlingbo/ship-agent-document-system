@@ -48,10 +48,18 @@ agently-cli +me
 
 Authorization determines the active mailbox, so the Skill is not tied to one address. Re-run `agently-cli auth login` to switch accounts. Never place OAuth tokens or mailbox data inside this Skill.
 
-## Skill locations
+## Install the total and component Skills
 
-Copy the entire `ship-agent-document-system` directory to one of these locations, then start a new agent session if its Skill list is cached:
+Install all 11 sibling Skills so each component can be discovered independently:
 
-- Hermes: `~/.hermes/skills/ship-agent-document-system/`
-- OpenClaw workspace: `<workspace>/skills/ship-agent-document-system/`
-- Codex: `~/.codex/skills/ship-agent-document-system/`
+```bash
+python3 "{baseDir}/scripts/install_skills.py" --target ~/.codex/skills
+```
+
+Alternative targets:
+
+- Hermes: `~/.hermes/skills`
+- OpenClaw workspace: `<workspace>/skills`
+- Codex: `~/.codex/skills`
+
+The installer keeps one shared runtime in `ship-agent-document-system` and installs ten small component Skill folders beside it. Start a new agent session if the Skill list is cached.

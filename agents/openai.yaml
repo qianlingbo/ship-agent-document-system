@@ -1,4 +1,4 @@
 interface:
-  display_name: "船舶代理单证系统"
-  short_description: "邮件、船舶证书、船员、港口及单一窗口全流程处理"
+  display_name: "船舶代理单证总控"
+  short_description: "邮件、证书、船员、港口及单一窗口端到端处理"
   default_prompt: "Use $ship-agent-document-system to process vessel emails and documents into audited ship folders, maritime PDFs, taskbook, single-window Excel, and crew photo workbook."

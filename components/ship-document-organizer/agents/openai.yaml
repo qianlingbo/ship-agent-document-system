@@ -1,0 +1,4 @@
+interface:
+  display_name: "船舶文件整理解压"
+  short_description: "按船名归档原始文件并安全递归解压压缩包"
+  default_prompt: "Use $ship-document-organizer to organize and recursively extract these vessel documents."

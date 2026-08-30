@@ -1,0 +1,4 @@
+interface:
+  display_name: "船舶证书数据提取"
+  short_description: "提取证书编号、签发、有效期及最后年检日期"
+  default_prompt: "Use $ship-certificate-data to extract structured dates and numbers from these vessel certificates."

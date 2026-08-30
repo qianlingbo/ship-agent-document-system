@@ -1,0 +1,4 @@
+interface:
+  display_name: "船舶计划任务书"
+  short_description: "根据邮件正文和船舶资料生成计划任务书"
+  default_prompt: "Use $ship-taskbook to fill the vessel plan taskbook from confirmed source data."

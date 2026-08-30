@@ -1,0 +1,4 @@
+interface:
+  display_name: "护照 MRZ 船员姓名核验"
+  short_description: "按护照机读码顺序核对并修正船员英文姓名"
+  default_prompt: "Use $ship-passport-mrz to verify these crew names against numbered passport MRZ lines."

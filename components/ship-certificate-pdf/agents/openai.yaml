@@ -1,0 +1,4 @@
+interface:
+  display_name: "船舶证书 PDF 合并"
+  short_description: "生成船舶、适任及危险品分组 PDF 文件"
+  default_prompt: "Use $ship-certificate-pdf to classify and merge these vessel certificate PDFs."
