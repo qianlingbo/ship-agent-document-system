@@ -72,7 +72,7 @@ The pipeline must:
 6. Verify non-Chinese crew names against passport MRZ order. For example, use `KHEDR IHAB ELSAYED KHEDR`, not the printed Full Name order.
 7. If OCR cannot resolve an MRZ, record uncertainty in `处理清单.json`; place confirmed overrides in `护照姓名人工核对.json`, keyed by passport number, then rerun.
 8. Extract certificate number, issue date, expiry date, and latest annual verification date. Prefer the vessel particulars table when available and fall back to certificate OCR.
-9. Ignore WRC completely in derived PDFs and Excel. Retain only its untouched source file under `原始文件` for audit.
+9. Include WRC at the end of `船舶证书.pdf`, but never write WRC into the single-window Excel certificate rows.
 10. Fill the supplied taskbook only from available mail/document facts. Leave unknown fields blank; never invent ship-specific values.
 
 ## Required maritime outputs
@@ -82,7 +82,7 @@ Create `海事/船舶证书.pdf` in this order:
 1. International Registry Certificate
 2. Tonnage Certificate
 3. Load Line with annual endorsement
-4. IOPP and Form B
+4. IOPP and Form A or Form B
 5. Safety Construction with annual endorsement
 6. Safety Equipment and Form E
 7. Safety Radio and Form R
@@ -91,13 +91,14 @@ Create `海事/船舶证书.pdf` in this order:
 10. DOC with annual endorsement
 11. SMC with annual endorsement
 12. ISSC with annual endorsement
+13. WRC
 
 Create `海事/适任证书.pdf` from flag-state competency certificates for CAPT, C/O, 2/O, 3/O, C/E, 2/E, 3/E, 4/E, and two GMDSS certificates, in filename/sequence order.
 
 Create `海事/危险品证书/` with exactly these derived groups when sources exist:
 
 - `国籍证书 INTERNATIONAL REGISTRY CERT.pdf`
-- `IOPP及附件 I.O.P.P. AND FORM B.pdf`
+- `IOPP及附件 I.O.P.P. AND FORM A OR B.pdf`
 - `安全证书 SAFETY CONSTRUCTION_EQUIPMENT_RADIO.pdf`
 - `CLC.pdf`
 
@@ -130,7 +131,7 @@ Open `<output>/<vessel>/处理清单.json` and verify:
 - `errors` is empty, or each remaining error is explicitly reported to the user.
 - `passport_name_checks` covers each passport name that needed MRZ reordering.
 - Output paths exist; empty categories are not falsely reported as completed.
-- `单一窗口录入.xlsx` contains crew, ports, and certificate rows; no WRC row exists.
+- `单一窗口录入.xlsx` contains crew, ports, and certificate rows; no WRC row exists even though WRC is retained in `船舶证书.pdf`.
 - `船员信息.xlsx`, when generated, contains two embedded images per crew member and all embedded images are 20–200 KB.
 - The final government-site import remains pending unless explicitly completed in a separate approved browser step.
 

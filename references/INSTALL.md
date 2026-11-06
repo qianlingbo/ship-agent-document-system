@@ -18,6 +18,8 @@ Required for PDF OCR and passport-image processing:
 - Tesseract OCR with English; Chinese improves certificate OCR
 - ImageMagick (`magick`)
 
+`xlrd` is included in `scripts/requirements.txt` so legacy `.xls` Crew List and Port of Call files can be read.
+
 Recommended for RAR and other archives: `7zz`, `7z`, or `unar`.
 
 On macOS with Homebrew:

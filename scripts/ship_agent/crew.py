@@ -73,33 +73,23 @@ def _rows(path: Path) -> list[dict[str, Any]]:
         workbook = load_workbook(path, read_only=True, data_only=True)
         sheet = workbook.active
         values = list(sheet.values)
-        if not values:
-            return []
-        header_index = 0
-        for index, row in enumerate(values):
-            joined = " ".join(str(x or "") for x in row)
-            if "Family name" in joined or "Rank or rating" in joined or "Port of Call" in joined:
-                header_index = index
-                break
-        headers = [str(x or "") for x in values[header_index]]
-        rows: list[dict[str, Any]] = []
-        imo_layout = any("Family name" in header for header in headers) and any("Rank or rating" in header for header in headers)
-        for row in values[header_index + 1:]:
-            if not any(x not in (None, "") for x in row):
-                continue
-            # IMO crew list data rows start with a numeric sequence in column B.
-            if header_index and not isinstance(row[1] if len(row) > 1 else None, (int, float)):
-                continue
-            if imo_layout:
-                rows.append({
-                    "No.": row[1], "Family name": row[2], "Given names": row[3], "Sex": row[4],
-                    "Rank": row[5], "Nationality": row[6], "Place of Birth": row[8], "Date of Birth": row[10],
-                    "Passport": row[11], "Seaman's Book": row[13], "Port of Embarkation": row[15],
-                    "Date of Embarkation": row[16],
-                })
-            else:
-                rows.append(dict(zip(headers, row)))
-        return rows
+        return _tabular_rows(values)
+    if path.suffix.lower() == ".xls":
+        import xlrd
+
+        workbook = xlrd.open_workbook(path)
+        sheet = workbook.sheet_by_index(0)
+        values = []
+        for row_index in range(sheet.nrows):
+            row = []
+            for column_index in range(sheet.ncols):
+                cell = sheet.cell(row_index, column_index)
+                value = cell.value
+                if cell.ctype == xlrd.XL_CELL_DATE:
+                    value = xlrd.xldate_as_datetime(value, workbook.datemode)
+                row.append(value)
+            values.append(tuple(row))
+        return _tabular_rows(values)
     if path.suffix.lower() == ".pdf":
         import pdfplumber
         rows: list[dict[str, Any]] = []
@@ -113,13 +103,43 @@ def _rows(path: Path) -> list[dict[str, Any]]:
                         continue
                     rows.extend(dict(zip(headers, row)) for row in table[1:] if row and any(row))
         return rows
-    raise ValueError(f"仅支持 CSV/XLSX Crew List 或 Port of Call，收到: {path.name}")
+    raise ValueError(f"仅支持 CSV/XLS/XLSX Crew List 或 Port of Call，收到: {path.name}")
+
+
+def _tabular_rows(values: list[tuple[Any, ...]]) -> list[dict[str, Any]]:
+    if not values:
+        return []
+    header_index = 0
+    for index, row in enumerate(values):
+        joined = " ".join(str(x or "") for x in row)
+        if "Family name" in joined or "Rank or rating" in joined or "Port of Call" in joined:
+            header_index = index
+            break
+    headers = [str(x or "") for x in values[header_index]]
+    rows: list[dict[str, Any]] = []
+    imo_layout = any("Family name" in header for header in headers) and any("Rank or rating" in header for header in headers)
+    for row in values[header_index + 1:]:
+        if not any(x not in (None, "") for x in row):
+            continue
+        # IMO crew list data rows start with a numeric sequence in column B.
+        if header_index and not isinstance(row[1] if len(row) > 1 else None, (int, float)):
+            continue
+        if imo_layout:
+            rows.append({
+                "No.": row[1], "Family name": row[2], "Given names": row[3], "Sex": row[4],
+                "Rank": row[5], "Nationality": row[6], "Place of Birth": row[8], "Date of Birth": row[10],
+                "Passport": row[11], "Seaman's Book": row[13], "Port of Embarkation": row[15],
+                "Date of Embarkation": row[16],
+            })
+        else:
+            rows.append(dict(zip(headers, row)))
+    return rows
 
 
 def find_input(files: list[Path], kind: str) -> Path | None:
     candidates = []
     for path in files:
-        if path.suffix.lower() not in {".csv", ".xlsx", ".xlsm", ".pdf"}:
+        if path.suffix.lower() not in {".csv", ".xls", ".xlsx", ".xlsm", ".pdf"}:
             continue
         name = path.name.lower()
         if kind == "crew" and any(token in name for token in ("crew", "船员", "imo")):
@@ -129,7 +149,7 @@ def find_input(files: list[Path], kind: str) -> Path | None:
     if not candidates:
         return None
     if kind == "crew":
-        return sorted(candidates, key=lambda p: (p.suffix.lower() not in {".xlsx", ".xlsm"}, p.name.lower()))[0]
+        return sorted(candidates, key=lambda p: (p.suffix.lower() not in {".xls", ".xlsx", ".xlsm"}, p.name.lower()))[0]
     return sorted(candidates, key=lambda p: (not any(token in p.name.lower() for token in ("last 10", "last ten", "poc")), p.suffix.lower() == ".pdf", p.name.lower()))[0]
 
 

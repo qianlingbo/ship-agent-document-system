@@ -12,7 +12,7 @@ def main() -> int:
         name: importlib.util.find_spec(module) is not None
         for name, module in {
             "openpyxl": "openpyxl", "Pillow": "PIL", "numpy": "numpy",
-            "pypdf": "pypdf", "pdfplumber": "pdfplumber", "python-docx": "docx",
+            "pypdf": "pypdf", "pdfplumber": "pdfplumber", "python-docx": "docx", "xlrd": "xlrd",
         }.items()
     }
     required_commands = {name: shutil.which(name) for name in ("pdftoppm", "tesseract", "magick")}

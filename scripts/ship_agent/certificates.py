@@ -123,9 +123,11 @@ def extract_certificate_number(text: str) -> str:
     return ""
 
 
-def inspect_certificate(path: str | Path, category: str | None = None) -> CertificateRecord:
+def inspect_certificate(
+    path: str | Path, category: str | None = None, text: str | None = None,
+) -> CertificateRecord:
     source = Path(path)
-    text = extract_pdf_text(source)
+    text = extract_pdf_text(source) if text is None else text
     category = category or classify_document(source, text)
     issue, expiry, annual = extract_certificate_dates(text)
     notes = "" if text else "未提取到 PDF 文本层；扫描件可能需要 OCR"
@@ -158,7 +160,7 @@ def build_certificate_outputs(files: list[Path], maritime_dir: str | Path) -> li
     cert_dir.mkdir(parents=True, exist_ok=True)
     records: list[CertificateRecord] = []
     categorized: dict[str, list[Path]] = {}
-    allowed_categories = {category for category, _ in CERTIFICATE_RULES} - {"13_WRC"}
+    allowed_categories = {category for category, _ in CERTIFICATE_RULES}
     seen: set[str] = set()
     for path in files:
         if path.suffix.lower() != ".pdf":
@@ -167,12 +169,11 @@ def build_certificate_outputs(files: list[Path], maritime_dir: str | Path) -> li
         if digest in seen:
             continue
         seen.add(digest)
-        category = classify_document(path)
-        # WRC is intentionally excluded from every derived PDF and workbook.
-        # The source remains under 原始文件 for audit, but is otherwise ignored.
+        text = extract_pdf_text(path)
+        category = classify_document(path, text)
         if category not in allowed_categories:
             continue
-        record = inspect_certificate(path, category)
+        record = inspect_certificate(path, category, text)
         records.append(record)
         categorized.setdefault(category, []).append(path)
         target = cert_dir / path.name
@@ -182,13 +183,16 @@ def build_certificate_outputs(files: list[Path], maritime_dir: str | Path) -> li
     ordered = [category for category, _ in CERTIFICATE_RULES]
     vessel_files = [p for category in ordered for p in categorized.get(category, [])]
     _merge(vessel_files, maritime / "船舶证书.pdf")
-    competency = [p for p in files if p.suffix.lower() == ".pdf" and classify_document(p) == "CREW_COMPETENCY"]
+    competency = sorted(
+        (p for p in files if p.suffix.lower() == ".pdf" and classify_document(p, extract_pdf_text(p)) == "CREW_COMPETENCY"),
+        key=lambda path: [int(token) if token.isdigit() else token.lower() for token in re.split(r"(\d+)", path.name)],
+    )
     _merge(competency, maritime / "适任证书.pdf")
     dangerous_dir = maritime / "危险品证书"
     dangerous_dir.mkdir(parents=True, exist_ok=True)
     dangerous_groups = (
         ("国籍证书 INTERNATIONAL REGISTRY CERT.pdf", ["01_INTERNATIONAL_REGISTRY_CERT"]),
-        ("IOPP及附件 I.O.P.P. AND FORM B.pdf", ["04_IOPP_FORM_B"]),
+        ("IOPP及附件 I.O.P.P. AND FORM A OR B.pdf", ["04_IOPP_FORM_B"]),
         ("安全证书 SAFETY CONSTRUCTION_EQUIPMENT_RADIO.pdf", [
             "05_SAFETY_CONSTRUCTION", "06_SAFETY_EQUIPMENT_FORM_E", "07_SAFETY_RADIO_FORM_R",
         ]),
