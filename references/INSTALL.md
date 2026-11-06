@@ -52,7 +52,7 @@ Authorization determines the active mailbox, so the Skill is not tied to one add
 
 ## Install the total and component Skills
 
-Install all 11 sibling Skills so each component can be discovered independently:
+Install all 12 sibling Skills so each component can be discovered independently:
 
 ```bash
 python3 "{baseDir}/scripts/install_skills.py" --target ~/.codex/skills
@@ -64,4 +64,4 @@ Alternative targets:
 - OpenClaw workspace: `<workspace>/skills`
 - Codex: `~/.codex/skills`
 
-The installer keeps one shared runtime in `ship-agent-document-system` and installs ten small component Skill folders beside it. Start a new agent session if the Skill list is cached.
+The installer keeps one shared runtime in `ship-agent-document-system` and installs eleven small component Skill folders beside it. Start a new agent session if the Skill list is cached.

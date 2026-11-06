@@ -1,0 +1,4 @@
+interface:
+  display_name: "综保区船舶作业预报单"
+  short_description: "由船舶概况A表生成综保区码头船舶作业预报单"
+  default_prompt: "Use $ship-bonded-terminal-forecast to generate and verify a 综保区码头船舶作业预报单 from the supplied vessel particulars A form."

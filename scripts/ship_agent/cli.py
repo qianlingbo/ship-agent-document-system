@@ -8,6 +8,7 @@ from pathlib import Path
 from .agent_mail import AgentMailClient, AgentMailError
 from .config import Settings
 from .pipeline import ShipPipeline
+from .run_state import RunStateStore, output_state
 
 
 SKILL_ROOT = Path(__file__).resolve().parents[2]
@@ -53,27 +54,53 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "process-mail":
+        runs = RunStateStore(settings.work_root / "运行记录.json")
+        run_id = runs.start(args.message_id)
         try:
             result = pipeline.process_agent_mail(AgentMailClient(args.mail_cli), args.message_id)
         except AgentMailError as exc:
+            runs.finish(run_id, "failed", error=str(exc))
             parser.error(str(exc))
+        except Exception as exc:
+            runs.finish(run_id, "failed", error=str(exc))
+            raise
+        state, detail = output_state(result)
+        runs.finish(run_id, state, result, detail)
         print(result)
         return 0
 
     client = AgentMailClient(args.mail_cli)
     state_path = settings.work_root / "processed_message_ids.json"
+    runs = RunStateStore(settings.work_root / "运行记录.json")
     try:
         processed = set(json.loads(state_path.read_text(encoding="utf-8"))) if state_path.exists() else set()
     except (ValueError, OSError):
         processed = set()
     interval = args.interval or settings.poll_seconds
     while True:
+        failures = 0
         try:
             messages = client.list_messages(unread_only=True, limit=50)
             for message in messages:
                 if message.message_id in processed:
                     continue
-                result = pipeline.process_agent_mail(client, message.message_id)
+                run_id = runs.start(message.message_id, message.subject)
+                try:
+                    result = pipeline.process_agent_mail(client, message.message_id)
+                except AgentMailError as exc:
+                    runs.finish(run_id, "failed", error=str(exc))
+                    failures += 1
+                    if exc.code == 3:
+                        raise
+                    print(f"FAILED {message.message_id}: {exc}")
+                    continue
+                except Exception as exc:
+                    runs.finish(run_id, "failed", error=str(exc))
+                    failures += 1
+                    print(f"FAILED {message.message_id}: {exc}")
+                    continue
+                state, detail = output_state(result)
+                runs.finish(run_id, state, result, detail)
                 processed.add(message.message_id)
                 settings.work_root.mkdir(parents=True, exist_ok=True)
                 state_path.write_text(json.dumps(sorted(processed), ensure_ascii=False, indent=2), encoding="utf-8")
@@ -81,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
         except AgentMailError as exc:
             parser.error(str(exc))
         if args.once:
-            return 0
+            return 1 if failures else 0
         time.sleep(interval)
 
     return 0

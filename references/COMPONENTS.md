@@ -4,6 +4,7 @@ Use the total workflow only when the user asks to process a vessel end to end. F
 
 | Skill | Responsibility | Main output |
 |---|---|---|
+| `$ship-bonded-terminal-forecast` | Convert particulars A into the bonded-terminal forecast template | `综保区码头船舶作业预报单.xlsx` |
 | `$ship-mail-intake` | List/read Agent Mail and download one message | Vessel raw folder |
 | `$ship-document-organizer` | Preserve, group, and recursively extract local files | `整理清单.json` |
 | `$ship-certificate-pdf` | Merge vessel, competency, and dangerous-goods PDFs | `海事/*.pdf` |

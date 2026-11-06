@@ -75,6 +75,10 @@ The pipeline must:
 9. Include WRC at the end of `船舶证书.pdf`, but never write WRC into the single-window Excel certificate rows.
 10. Fill the supplied taskbook only from available mail/document facts. Leave unknown fields blank; never invent ship-specific values.
 
+Every Agent Mail run is recorded in `<output>/运行记录.json` with an explicit `running`, `completed`, `needs_manual_review`, or `failed` state. Network, server, and rate-limit failures are retried only at the individual CLI-call layer; document processing stages are never blindly rerun. `处理清单.json` records source size and SHA-256 so later runs can be audited against the exact accumulated inputs.
+
+Implementation rationale and upstream design references are documented in [references/AUTOMATION_DESIGN.md](references/AUTOMATION_DESIGN.md).
+
 ## Required maritime outputs
 
 Create `海事/船舶证书.pdf` in this order:

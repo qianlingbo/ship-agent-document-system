@@ -254,9 +254,15 @@ class ShipPipeline:
             errors.append(f"未找到计划任务书模板: {self.template_path}")
 
         manifest = {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "ship_name": ship_name,
             "messages": history,
-            "files": [{"path": str(path.relative_to(ship_dir)), "category": classify_document(path)} for path in usable],
+            "files": [{
+                "path": str(path.relative_to(ship_dir)),
+                "category": classify_document(path),
+                "size_bytes": path.stat().st_size,
+                "sha256": _digest(path),
+            } for path in usable],
             "certificates": [asdict(c) for c in certificates],
             "passport_name_checks": passport_name_checks,
             "outputs": {

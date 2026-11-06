@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import subprocess
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,7 +14,9 @@ from .email_ingest import Attachment, EmailRecord
 
 
 class AgentMailError(RuntimeError):
-    pass
+    def __init__(self, message: str, code: int | None = None):
+        super().__init__(message)
+        self.code = code
 
 
 def _json_from_output(output: str) -> dict:
@@ -48,7 +51,11 @@ class AgentMailClient:
     explicitly returned by the CLI.
     """
 
-    def __init__(self, executable: str | Path | None = None):
+    def __init__(
+        self,
+        executable: str | Path | None = None,
+        retry_delays: tuple[float, ...] = (1.0, 2.0),
+    ):
         configured = executable or os.environ.get("AGENTLY_CLI")
         resolved = str(configured) if configured else shutil.which("agently-cli")
         if not resolved:
@@ -56,14 +63,27 @@ class AgentMailClient:
                 "未找到 agently-cli。请先安装 @tencent-qqmail/agently-cli 并执行 agently-cli auth login"
             )
         self.executable = resolved
+        self.retry_delays = retry_delays
 
     def _run(self, *args: str, cwd: str | Path | None = None) -> dict:
-        result = subprocess.run([self.executable, *args], cwd=cwd, capture_output=True, text=True)
-        payload = _json_from_output(result.stdout + ("\n" + result.stderr if result.stderr else ""))
-        if result.returncode != 0 or payload.get("ok") is False:
-            message = payload.get("error", {}).get("message") if isinstance(payload.get("error"), dict) else None
-            raise AgentMailError(message or result.stderr.strip() or f"agently-cli 退出码 {result.returncode}")
-        return payload
+        for attempt in range(len(self.retry_delays) + 1):
+            result = subprocess.run([self.executable, *args], cwd=cwd, capture_output=True, text=True)
+            try:
+                payload = _json_from_output(result.stdout + ("\n" + result.stderr if result.stderr else ""))
+            except AgentMailError as exc:
+                error = AgentMailError(str(exc), result.returncode or None)
+            else:
+                if result.returncode == 0 and payload.get("ok") is not False:
+                    return payload
+                message = payload.get("error", {}).get("message") if isinstance(payload.get("error"), dict) else None
+                error = AgentMailError(
+                    message or result.stderr.strip() or f"agently-cli 退出码 {result.returncode}",
+                    result.returncode or None,
+                )
+            if error.code not in {1, 4, 7} or attempt >= len(self.retry_delays):
+                raise error
+            time.sleep(self.retry_delays[attempt])
+        raise AssertionError("unreachable")
 
     def list_messages(self, unread_only: bool = True, limit: int = 50) -> list[AgentMailMessage]:
         args = ["message", "+list", "--dir", "inbox", "--limit", str(limit), "--has-attachments"]

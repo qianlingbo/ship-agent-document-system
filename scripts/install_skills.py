@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 COMPONENTS = ROOT / "components"
 COMPONENT_NAMES = (
+    "ship-bonded-terminal-forecast",
     "ship-certificate-data",
     "ship-certificate-pdf",
     "ship-crew-list",

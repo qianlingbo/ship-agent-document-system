@@ -3,7 +3,10 @@ from __future__ import annotations
 import sys
 import tempfile
 import unittest
+import json
 from pathlib import Path
+from subprocess import CompletedProcess
+from unittest.mock import patch
 
 from openpyxl import load_workbook
 from pypdf import PdfReader, PdfWriter
@@ -15,6 +18,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from ship_agent.certificates import build_certificate_outputs  # noqa: E402
 from ship_agent.classify import classify_document  # noqa: E402
 from ship_agent.excel_output import build_workbook  # noqa: E402
+from ship_agent.agent_mail import AgentMailClient, AgentMailError  # noqa: E402
+from ship_agent.run_state import RunStateStore, output_state  # noqa: E402
 
 
 def blank_pdf(path: Path) -> None:
@@ -26,6 +31,40 @@ def blank_pdf(path: Path) -> None:
 
 
 class SystemContractTest(unittest.TestCase):
+    def test_mail_client_retries_only_transient_exit_codes(self) -> None:
+        transient = CompletedProcess([], 4, '{"ok":false,"error":{"message":"network"}}', "")
+        success = CompletedProcess([], 0, '{"ok":true,"data":{}}', "")
+        with patch("ship_agent.agent_mail.shutil.which", return_value="/tmp/agently-cli"), patch(
+            "ship_agent.agent_mail.subprocess.run", side_effect=[transient, success]
+        ) as run, patch("ship_agent.agent_mail.time.sleep"):
+            self.assertTrue(AgentMailClient(retry_delays=(0,))._run("+me")["ok"])
+            self.assertEqual(run.call_count, 2)
+
+        permanent = CompletedProcess([], 3, '{"ok":false,"error":{"message":"auth"}}', "")
+        with patch("ship_agent.agent_mail.shutil.which", return_value="/tmp/agently-cli"), patch(
+            "ship_agent.agent_mail.subprocess.run", return_value=permanent
+        ) as run:
+            with self.assertRaises(AgentMailError) as caught:
+                AgentMailClient(retry_delays=(0, 0))._run("+me")
+            self.assertEqual(caught.exception.code, 3)
+            self.assertEqual(run.call_count, 1)
+
+    def test_run_state_records_manual_review(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            store = RunStateStore(root / "运行记录.json")
+            run_id = store.start("message-1", "Vessel documents")
+            ship = root / "VESSEL"
+            ship.mkdir()
+            (ship / "处理清单.json").write_text(
+                json.dumps({"errors": ["护照 MRZ 需人工核对"]}, ensure_ascii=False), encoding="utf-8"
+            )
+            state, detail = output_state(ship)
+            store.finish(run_id, state, ship, detail)
+            record = json.loads((root / "运行记录.json").read_text(encoding="utf-8"))["runs"][0]
+            self.assertEqual(record["state"], "needs_manual_review")
+            self.assertIn("MRZ", record["error"])
+
     def test_iopp_form_a_is_classified(self) -> None:
         self.assertEqual(classify_document("04 IOPP AND FORM A.pdf"), "04_IOPP_FORM_B")
 
